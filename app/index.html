@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title></title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width">
+        <!-- build:css(.) styles/vendor.css -->
+        <link rel="stylesheet" href="bower_components/angular-material/angular-material.css">
+        <!-- endbuild -->
+        <!-- build:css(.tmp) styles/main.css -->
+        <link rel="stylesheet" href="styles/main.css">
+        <!-- endbuild -->
+        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    </head>
+    <body ng-app="colorWorkerApp" layout="column">
+
+        <header ng-controller="ToolbarCtrl" ng-include src="'views/toolbar.html'"></header>
+
+        <main layout="row" flex>
+            <md-sidenav md-is-locked-open="true" class="md-sidenav-left md-whiteframe-z1" flex="25">
+                <div ng-controller="ProducerCtrl" ng-include src="'views/producer.html'"></div>
+                <div ng-controller="ConsumerCtrl" ng-include src="'views/consumer.html'"></div>
+
+            </md-sidenav>
+            <div flex="75" layout="column" layout-padding ng-controller="CanvasCtrl" ng-include src="'views/canvas.html'">
+            </div>
+        </main>
+
+        <!-- build:js(.) scripts/vendor.js -->
+        <!-- bower:js -->
+        <script src="bower_components/jquery/dist/jquery.js"></script>
+        <script src="bower_components/angular/angular.js"></script>
+        <script src="bower_components/angular-aria/angular-aria.js"></script>
+        <script src="bower_components/angular-animate/angular-animate.js"></script>
+        <script src="bower_components/angular-material/angular-material.js"></script>
+        <!-- endbower -->
+        <!-- endbuild -->
+
+        <!-- build:js({.tmp,app}) scripts/scripts.js -->
+        <script src="scripts/app.js"></script>
+        <script src="scripts/directives/colorize.js"></script>
+        <script src="scripts/directives/logo.js"></script>
+        <script src="scripts/services/color.js"></script>
+        <script src="scripts/directives/canvas.js"></script>
+        <script src="scripts/services/storage.js"></script>
+        <script src="scripts/services/canvas.js"></script>
+        <script src="scripts/controllers/producer.js"></script>
+        <script src="scripts/controllers/consumer.js"></script>
+        <script src="scripts/services/toast.js"></script>
+        <script src="scripts/controllers/canvas.js"></script>
+        <script src="scripts/controllers/toolbar.js"></script>
+        <!-- endbuild -->
+    </body>
+</html>

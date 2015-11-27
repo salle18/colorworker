@@ -1,0 +1,335 @@
+<?php
+/**
+ * Template Name: Proizvodi
+ */
+
+var_dump('test');
+get_header();
+
+?>
+
+<div class="content-area">
+    <div id="content" class="site-content" role="main">
+        <div class="medium-content">
+			<?php
+			global $wpdb;
+			/**
+			 * ID_ArtikliStablo uzimamo iz page promenljive wordpressa
+			 */
+			$ID_ArtikliStablo = get_query_var('page');
+
+			/**
+			 * OPCIJE IZ FSH PLUGINA
+			 */
+			$options = get_option('fsh_options');
+			$query = $options['query'];
+			$tableid = $options['table-id'];
+			$tableparent = $options['table-parent'];
+			$root = $options['root'];
+			$max_depth = $options['max-depth'];
+			$pageid = $options['page-id'];
+			$tabletitle = $options['table-title'];
+                       
+			try {
+
+				/**
+				 * Query iz opcija FSH Plugina
+				 */
+				$prepare = $wpdb->prepare($query, pll_current_language());
+
+				/**
+				 * Prvo uzimamo ceo tree iz baze,
+				 * zatim subtree od korenog elementa zadatog u fshoptions root,
+				 * (to znaci da korisnik ima pristup samo onom delu stablu koji je dat u opcijama!)
+				 * zatim od njega pravimo subtree od trazenog elementa koji je stigao
+				 * kao page parametar
+				 */
+				$result = $wpdb->get_results($prepare, ARRAY_A);
+
+				$tree = get_tree($result, $tableid, $tableparent);
+				$main_subtree = get_subtree($root, $tree, $tableid);
+				set_tree_depths($main_subtree);
+				$subtree = get_subtree($ID_ArtikliStablo, $main_subtree, $tableid);
+             
+
+				/**
+				 * Ako je prazno podstablo baca gresku nema tog proizvoda
+				 */
+				$nonExistingCategoryError = __('Zadata kategorija proizvoda ne postoji', 'fsh-theme');
+				if (empty($subtree)) {
+					throw new Exception($nonExistingCategoryError);
+				}
+
+				/**
+				 * URL stranice dobijamo iz pageid parametra
+				 * iz opcija FSH plugina
+				 */
+				$href = get_page_url($pageid);
+
+				/**
+				 * Uzimamo dubinu stabla
+				 */
+				$subtree_depth = get_tree_depth($subtree[0]);
+
+				/**
+				 * Ukoliko je dubina stabla 1 onda je u pitanju list i tada prikazujemo
+				 * proizvod inace prikazujemo listu proizvoda
+				 */
+				if ($subtree_depth === 1) {
+					$ID_ArtikliGrupe = get_ID_ArtikliGrupe($ID_ArtikliStablo);
+					if ($ID_ArtikliGrupe < 0) {
+						throw new Exception($nonExistingCategoryError);
+					}
+foreach($ID_ArtikliGrupe as $idArtikli){
+					$details = get_product_details($idArtikli);
+
+					if (!empty($result)) {
+
+
+						$params = new KeyVal($details);
+
+						echo output_bread_crumbs($main_subtree, $ID_ArtikliStablo, $href, $max_depth, array('ul-class' => 'breadcrumbs'));
+						echo output_single_product_details($params);
+                                                
+                                                output_documents($ID_ArtikliStablo);
+
+
+					} else {
+						throw new Exception($nonExistingCategoryError);
+					}
+
+}
+				}
+				/**
+				 * Prikazujemo listu proizvoda
+				 */ else {
+					$current_depth = $subtree[0]['depth'];
+					$depth_dif = $max_depth - $current_depth;
+
+					if ($depth_dif < 0) {
+						throw new Exception($nonExistingCategoryError);
+					}
+
+					/**
+					 * Iz opcija FSH Plugina imamo do koje se maksimalno dubine prikazuje
+					 * podstablo, ako smo trenutno na vise od 2 cvora do dna stabla
+					 * prikazujemo ul listu cvorova za sledeca 2 nivoa
+					 */
+					if ($depth_dif > 1) {
+						$_max_depth = 2;
+						$_prev_levels = 1;
+						echo tag(output_tree($subtree, $href, $tableid, $tabletitle, $_max_depth, $_prev_levels), 'ul');
+					} else if ($depth_dif === 1) {
+						/**
+						 * Prikazujemo brze linkove za pristup naslovima posto
+						 * lista proizvoda moze da bude dugacka
+						 */
+						$quicklinks = array();
+						$out = '';
+						foreach ($subtree[0]['children'] as $_subtree) {
+							$naslov_link_id = strip_ws($_subtree[$tabletitle]);
+							$quicklinks[$_subtree[$tabletitle]] = $href . $_subtree[$tableid] . '/';
+							$naslov = tag($_subtree[$tabletitle], 'h2');
+							$out .= tag($naslov, 'a', array('href' => $href . $_subtree[$tableid] . '/'));
+							$node_values = get_nodes_values(array($_subtree), $tableid);
+							$out .= show_products($node_values, '', $href);
+						}
+						$quicklinks_html = '';
+						foreach ($quicklinks as $key => $value) {
+							$quicklinks_html .= tag(tag($key, 'a', array('href' => $value, 'class' => 'quicklink')), 'li');
+						}
+						echo output_bread_crumbs($main_subtree, $ID_ArtikliStablo, $href, $max_depth, array('ul-class' => 'breadcrumbs'), $quicklinks_html);
+						echo $out;
+					} else if ($depth_dif === 0) {
+						echo output_bread_crumbs($main_subtree, $ID_ArtikliStablo, $href, $max_depth, array('ul-class' => 'breadcrumbs'));
+						foreach ($subtree[0]['children'] as $_subtree) {
+							$tree_depth = get_tree_depth($subtree[0]);
+							$naslov = $tree_depth > 2 ? tag($_subtree[$tabletitle], 'h4') : '';
+							$node_values = get_nodes_values(array($_subtree), $tableid);
+							echo show_products($node_values, $naslov, $href);
+						}
+					}
+				}
+			} catch (Exception $e) {
+				echo $e->getMessage();
+			}
+			?>
+
+        </div><!-- entry-content -->
+    </div><!-- #content -->
+</div><!-- #primary -->
+
+
+<?php
+
+function get_product_details($ID_ArtikliGrupe) {
+	global $wpdb;
+	$sql = "select distinct ArtikliDetaljiTip.Naziv, ArtikliDetalji.Sadrzaj
+from ArtikliDetaljiTip, ArtikliDetalji, Jezici
+where ArtikliDetaljiTip.ID_ArtikliDetaljiTip = ArtikliDetalji.ID_ArtikliDetaljiTip
+and Jezici.ID_Jezici = ArtikliDetalji.ID_Jezici
+and (Jezici.OznakaJezika = %s or Jezici.OznakaJezika='all')
+and ArtikliDetalji.ID_ArtikliGrupe = %d";
+	$prepare = $wpdb->prepare($sql, pll_current_language(), $ID_ArtikliGrupe);
+	return $wpdb->get_results($prepare, OBJECT_K);
+}
+
+function get_ID_ArtikliGrupe($ID_ArtikliStablo) {
+	global $wpdb;
+	$sql = 'SELECT DISTINCT Artikli.ID_ArtikliGrupe FROM Artikli, Web_Prikaz WHERE Artikli.ID_ArtikliStablo = %d
+			AND Artikli.ID_ArtikliGrupe>1 AND Web_Prikaz.ID_ArtikliGrupe = Artikli.ID_ArtikliGrupe
+			AND Web_Prikaz.Prikazati>0';
+	$prepare = $wpdb->prepare($sql, $ID_ArtikliStablo);
+	$result = $wpdb->get_col($prepare);
+	return empty($result) ? -1 : $result;
+}
+
+/**
+ * Prikazuje listu proizvoda
+ */
+function show_products($IDs_ArtikliStablo, $naslov, $href) {
+	global $wpdb;
+	$product_ids = $wpdb->get_results('SELECT DISTINCT a.ID_ArtikliGrupe, a.ID_ArtikliStablo  FROM Artikli a INNER JOIN Web_Prikaz w ON (a.ID_ArtikliGrupe=w.ID_ArtikliGrupe)WHERE ' . build_where('a.ID_ArtikliStablo', $IDs_ArtikliStablo) . 'AND a.ID_ArtikliGrupe>1 ORDER BY w.Redosled', ARRAY_A);
+
+	$output = '';
+	foreach ($product_ids as $row) {
+		$prepare = $wpdb->prepare("select distinct ArtikliDetaljiTip.Naziv, ArtikliDetalji.Sadrzaj
+from ArtikliDetaljiTip, ArtikliDetalji, Jezici, Web_Prikaz
+where ArtikliDetaljiTip.ID_ArtikliDetaljiTip = ArtikliDetalji.ID_ArtikliDetaljiTip
+and Jezici.ID_Jezici = ArtikliDetalji.ID_Jezici
+and ArtikliDetalji.ID_ArtikliGrupe = Web_Prikaz.ID_ArtikliGrupe
+and (Jezici.OznakaJezika = %s or Jezici.OznakaJezika='all')
+and ArtikliDetalji.ID_ArtikliGrupe = %d and Web_Prikaz.Prikazati=1", pll_current_language(), $row['ID_ArtikliGrupe']);
+
+		$result = $wpdb->get_results($prepare, OBJECT_K);
+		if (!empty($result)) {
+			$params = new KeyVal($result);
+			$output .= show_single_product($params, $href . $row['ID_ArtikliStablo'] . '/');
+		}
+	}
+	if ($output !== '') {
+		return $naslov . $output;
+	}
+	return '';
+}
+
+/**
+ * Prikazuje pojedinacni proizvod u listi
+ */
+function show_single_product($params, $href) {
+
+	$out = '<div class="product clearfix">';
+	$out .= "<a href=$href>";
+	if ($params->has_key('slika')) {
+		$img_path = get_stylesheet_directory_uri() . '/images/' . $params->val('slika');
+		$out .= tag('', 'img', array('src' => $img_path, 'class' => 'left small'));
+	}
+	$out .= '</a>';
+	$out .= "<a href=$href>";
+	$out .= tag($params->val('naziv'), 'h5', array('style' => 'float:left;clear:right;margin-left:15px;'));
+	$out .= '</a>';
+	$out .= '</div>';
+	return $out;
+}
+
+/**
+ * Prikazuje sve detalje pojedinacnog proizvoda
+ */
+function output_single_product_details($params) {
+	$out = '<div class="product clearfix">';
+	$out .= tag($params->val('naziv'), 'h3');
+	if ($params->has_key('slika')) {
+		$img_path = get_stylesheet_directory_uri() . '/images/' . $params->val('slika');
+		$out .= tag('', 'img', array('src' => $img_path, 'class' => 'right medium'));
+	}
+	$out .= tag($params->val('namena'), 'p');
+	$out .= tag($params->val('sastojci'), 'p');
+	if ($params->has_key('karakteristike')) {
+		$out .= '<p class="bold no_spacing">' . __('Karakteristike:', 'fsh-theme') . '</p>';
+		$out .= $params->val_list('karakteristike', array('ul' => 'dots'));
+	}
+	if ($params->has_key('efekti')) {
+		$out .= '<p class="bold no_spacing">' . __('Efekti:', 'fsh-theme') . '</p>';
+		$out .= $params->val_list('efekti', array('ul' => 'dots'));
+	}
+	if ($params->has_key('hemijski sastav')) {
+
+		  $out .= '<p class="bold no_spacing">' . __('Fizicko hemijske karakteristike:', 'fsh-theme') . '</p>';
+		  $out .= $params->val_table('hemijski sastav', array('table' => '', 'tr' => ''));
+	}
+	if ($params->has_key('uputstva')) {
+		$out .= '<p class="bold no_spacing">' . __('Uputstvo:', 'fsh-theme') . '</p>';
+		$out .= $params->val_table('uputstva', array('table' => '', 'tr' => ''));
+	}
+        if ($params->has_key('attachment')) {
+		$out .= $params->val_links('attachment', array('ul' => 'dots'));
+	}
+	return $out . '</div>';
+}
+
+function output_bread_crumbs($tree, $node_id, $href, $max_depth, $user_classes = array(), $quicklinks_html = '') {
+	$default_classes = array('li-class' => '', 'ul-class' => '');
+	$classes = array_replace($default_classes, $user_classes);
+	$path = find_path($tree, $node_id, $max_depth);
+	$details = get_ArtikliStabloDetalji($path, 'naziv');
+	$output = '';
+	foreach ($details as $id => $detail) {
+		$link = tag($detail, 'a', array('href' => $href . $id . '/'));
+		$output .= tag($link, 'li', array('class' => $classes['li-class']));
+	}
+	if ($quicklinks_html !== '') {
+		$quicklinks_html = tag($quicklinks_html, 'ul', array('class' => 'quicklinks'));
+		$output .= tag($quicklinks_html, 'li');
+	}
+	return tag($output, 'ul', array('class' => $classes['ul-class']));
+}
+
+/**
+ * Vraca detalje za zadati niz cvorova
+ */
+function get_ArtikliStabloDetalji($IDs_ArtikliStablo, $detalj) {
+	global $wpdb;
+
+	$sql = 'SELECT ID_ArtikliStablo, Sadrzaj FROM ArtikliStabloDetalji, Jezici, ArtikliDetaljiTip
+		WHERE ID_ArtikliStablo IN (' . implode(',', $IDs_ArtikliStablo) . ')
+		AND ArtikliStabloDetalji.ID_Jezici = Jezici.ID_Jezici
+		AND Jezici.OznakaJezika = %s
+		AND ArtikliStabloDetalji.ID_ArtikliDetaljiTip = ArtikliDetaljiTip.ID_ArtikliDetaljiTip
+		AND ArtikliDetaljiTip.Naziv = %s';
+	$prepare = $wpdb->prepare($sql, pll_current_language(), $detalj);
+	$result = $wpdb->get_results($prepare, ARRAY_A);
+	$optimized_result = array();
+	foreach ($result as $row) {
+		$optimized_result[$row['ID_ArtikliStablo']] = $row['Sadrzaj'];
+	}
+	$out = array();
+	foreach ($IDs_ArtikliStablo as $id) {
+		$out[$id] = $optimized_result[$id];
+	}
+	return $out;
+}
+
+/**
+ * Prikazuje sve analize i dokumenta vezane za proizvod.
+ */
+function output_documents($ID_ArtikliStablo) {
+    global $wpdb;
+    $sql = "select ArtikliDokumenta.naziv, url from ArtikliDokumenta join Jezici on Jezici.ID_Jezici = ArtikliDokumenta.ID_Jezici where (oznakajezika = %s or oznakajezika = 'all') and ID_ArtikliStablo = %d";
+    $prepare = $wpdb->prepare($sql, pll_current_language(), $ID_ArtikliStablo);
+    $result = $wpdb->get_results($prepare, OBJECT_K);
+    if (!empty($result)) {
+    echo '<p class="bold no_spacing">' . __('Analize:', 'fsh-theme') . '</p>';
+    echo '<ul>';
+    }
+    foreach ($result as $dokument) {
+        echo "<li><a target="_blank" href='{$dokument->url}'>{$dokument->naziv}</a></li>";
+    }
+    if (!empty($result)) {
+    echo '</ul>';
+    }
+}
+
+?>
+
+<?php
+get_footer();

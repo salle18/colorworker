@@ -1,0 +1,29 @@
+<md-content>
+    <md-grid-list md-cols="8" md-row-height="1:1">
+        <md-grid-tile ng-click="toggleColor(key)" ng-class="[key, color.on ? 'on' : 'off']" md-rowspan="1" md-colspan="1" ng-repeat="(key, color) in colors">
+
+        </md-grid-tile>
+    </md-grid-list>
+</md-content>
+
+<md-toolbar class="md-whiteframe-z1">
+    <div class="md-toolbar-tools" layout="row">
+        Producer
+        <md-switch ng-model="producer.auto" aria-label="Auto switch" class="md-primary">{{ producer.auto ? 'A' : 'M' }}</md-switch>
+        <span flex></span>
+        <md-button class="md-fab md-raised" ng-click="toggleProducer()" aria-label="Toggle producer">
+            <md-tooltip ng-if="!producer.isRunning">Start producer</md-tooltip>
+            <md-icon ng-if="!producer.isRunning"><i class="material-icons">play_arrow</i></md-icon>
+            <md-tooltip ng-if="producer.isRunning">Pause producer</md-tooltip>
+            <md-icon ng-if="producer.isRunning">pause</md-icon>
+        </md-button>
+
+    </div>
+</md-toolbar>
+<div layout="row">
+    <div flex="10" layout layout-align="center center">
+        <span>{{ producer.speed}}</span>
+    </div>
+    <md-slider flex="75" flex-offset="5" class="md-primary" min="1" max="20" step="1" ng-model="producer.speed" aria-label="Producer speed">
+    </md-slider>
+</div>

@@ -1,0 +1,33 @@
+.md-toolbar-tools {
+    background: #f7f7f7;
+    color: rgba(0,0,0,0.54) !important;
+}
+
+.md-button .material-icons {
+    color: rgba(0,0,0,0.54) !important;
+}
+
+.amber{background: #FFAB00 !important}
+.blue{background: #2962FF !important}
+.cyan{background: #00B8D4 !important}
+.deep_orange{background: #DD2C00 !important}
+.deep_purple{background: #6200EA !important}
+.green{background: #00C853 !important}
+.indigo{background: #304FFE !important}
+.light_blue{background: #0091EA !important}
+.light_green{background: #64DD17 !important}
+.lime{background: #AEEA00 !important}
+.orange{background: #FF6D00 !important}
+.pink{background: #C51162 !important}
+.purple{background: #AA00FF !important}
+.red{background: #D50000 !important}
+.teal{background: #00BFA5 !important}
+.yellow{background: #FFD600 !important}
+
+md-grid-tile.on {
+    opacity: 1;
+}
+
+md-grid-tile.off {
+    opacity: 0.3;
+}

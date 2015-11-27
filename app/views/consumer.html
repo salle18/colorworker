@@ -1,0 +1,33 @@
+<md-toolbar class="md-whiteframe-z1" flex>
+    <div class="md-toolbar-tools"  layout="row">
+        Consumers<span flex></span>
+        <md-button class="md-raised md-fab" ng-click="addConsumer()">
+            <md-tooltip>Add consumer</md-tooltip>
+            <md-icon>playlist_add</md-icon>
+        </md-button>
+    </div>
+</md-toolbar>
+<md-list ng-repeat="consumer in consumers" layout-padding>
+    <md-list-item md-no-ink>{{ consumer.name}}
+        <md-switch ng-model="consumer.auto" aria-label="Auto switch" class="md-primary">{{ consumer.auto ? 'A' : 'M' }}</md-switch>
+        <span flex></span>
+        <md-button class="md-icon-button" ng-click="toggleConsumer($index)" aria-label="Start consumer">
+            <md-tooltip ng-if="!consumer.isRunning">Start consumer</md-tooltip>
+            <md-icon ng-if="!consumer.isRunning">play_arrow</md-icon>
+
+            <md-tooltip ng-if="consumer.isRunning">Pause consumer</md-tooltip>
+            <md-icon ng-if="consumer.isRunning">pause</md-icon>
+        </md-button>
+        <md-button class="md-icon-button" ng-click="removeConsumer($index)" aria-label="Delete consumer">
+            <md-tooltip>Delete consumer</md-tooltip>
+            <md-icon>delete</md-icon>
+        </md-button>
+    </md-list-item>
+    <div layout="row">
+        <div flex="10" layout layout-align="center center">
+            <span>{{ consumer.speed}}</span>
+        </div>
+        <md-slider flex="75" flex-offset="5" class="md-primary" min="1" max="20" step="1" ng-model="consumer.speed" aria-label="Consumer speed">
+        </md-slider>
+    </div>
+</md-list>

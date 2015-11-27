@@ -1,0 +1,34 @@
+{
+    "elements": {
+        "md-divider": {},
+        "md-progress-linear": {},
+        "cw-canvas": {},
+        "md-toolbar": {},
+        "md-header": {},
+        "md-subheader": {},
+        "md-icon": {},
+        "logo": {},
+        "md-sidenav": {},
+        "md-button": {},
+        "md-tooltip": {},
+        "md-content": {}
+    },
+    "attributes": {
+        "md-mode": {},
+        "layout-padding": {},
+        "flex-layout": {},
+        "ng-click": {},
+        "md-no-ink": {},
+        "ng-controller": {},
+        "ng-if": {},
+        "ng-hide": {},
+        "layout": {},
+        "flex": {},
+        "md-is-open": {},
+        "href": {},
+        "class": {},
+        "md-is-locked-open": {},
+        "value": {},
+        "aria-label": {}
+    }
+}
